@@ -1,20 +1,22 @@
 import numpy as np
 
-from DEOSA._utilities import reshape_np, find_neighbor
+from DEOSA._utilities import find_neighbor
 
 
 def simulated_annealing(population,
                         fitness,
                         compute_fitness,
-                        data):
+                        data,
+                        seed=0):
 
     # simulated annealing
+    np.random.seed(seed)
     [particle_count, dimension] = population.shape
     T0 = dimension
 
     for particle_no in range(particle_count):
         T = 2 * dimension
-        current_particle = reshape_np(population[particle_no].copy())
+        current_particle = population[particle_no][np.newaxis, :].copy()
         current_fitness = compute_fitness(current_particle, data)
         best_particle = current_particle.copy()
         best_fitness = current_fitness.copy()

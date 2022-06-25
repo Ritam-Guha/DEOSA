@@ -1,11 +1,14 @@
+import copy
+
 import DEOSA.config as config
 from DEOSA.data.dataloader import data_loader
-from DEOSA._utilities import avg_concentration, sign_func, get_transfer_function
+from DEOSA._utilities import avg_concentration, sign_func, get_transfer_function, compute_accuracy
 from DEOSA.simulated_annealing import simulated_annealing
 from DEOSA.fitness_functions import get_fitness_function
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+import pickle
 
 def DEOSA(  data,
             dimension,
@@ -17,36 +20,53 @@ def DEOSA(  data,
             GP=0.5,
             pool_size=4,
             max_iter=50,
-            allow_SA=True):
+            allow_SA=True,
+            seed=0):
+    """
+    :param data: data should be passed in a particular format
+    :param dimension: feature size of the data
+    :param type_data: knapsack/uci
+    :param population_size: number of population members
+    :param transfer_shape: s/v/u
+    :param a1: EO parameter
+    :param a2: EO parameter
+    :param GP: EO parameter
+    :param pool_size: EO parameter
+    :param max_iter: number of generations
+    :param allow_SA: allowing simulated annealing
+    :param seed: random seed used for random number generation
+    :return:
+    """
 
-    # pool initialization
-    np.random.seed(config.SEED)
+    # initialization
+    np.random.seed(seed)
     population = np.random.randint(0, 2, size=(population_size, dimension))
     eq_pool = np.zeros((pool_size + 1, dimension))
     eq_fit = np.array([0.0]*pool_size)
     conv_plot = []
     transfer_func = get_transfer_function(transfer_shape)
     compute_fitness = get_fitness_function(type_data)
+    best_solution = {}
 
     # iterations start
     for iter in range(max_iter):
-        pop_new = np.zeros((population_size, dimension))
-        fitness_list = compute_fitness(population, data)
-        sorted_idx = np.argsort(-fitness_list).squeeze()
+        fitness = compute_fitness(population, data)
+        sorted_idx = np.argsort(-fitness).squeeze()
         population = population[sorted_idx, :]
-        fitness_list = fitness_list[0, sorted_idx]
+        fitness = fitness[0, sorted_idx]
 
         # replacements in the pool
-        for i in range(population_size):
+        for i in range(pool_size):
             for j in range(pool_size):
-                if fitness_list[i] > eq_fit[j]:
-                    eq_fit[j] = fitness_list[i].copy()
-                    eq_pool[j, :] = population[i, :].copy()
+                if fitness[i] > eq_fit[j]:
+                    eq_fit[j] = copy.deepcopy(fitness[i])
+                    eq_pool[j, :] = copy.deepcopy(population[i, :])
                     break
 
         print(f"Best fitness till iteration {iter}: {eq_fit[0]}")
-        conv_plot.append(eq_fit[0])
-        best_particle = eq_pool[0, :]
+        conv_plot.append(copy.deepcopy(eq_fit[0]))
+        best_particle = copy.deepcopy(eq_pool[0, :])
+        best_fitness = copy.deepcopy(eq_fit[0])
 
         Cave = avg_concentration(eq_pool, pool_size, dimension)
         eq_pool[pool_size] = Cave.copy()
@@ -88,28 +108,45 @@ def DEOSA(  data,
                 temp = Ceq[j] + (population[i][j] - Ceq[j]) * F_vec[j] + G[j] * (1 - F_vec[j]) / lambda_vec[j]
                 temp = transfer_func(temp)
                 if temp > np.random.random():
-                    pop_new[i][j] = 1 - population[i][j]
+                    population[i][j] = 1 - population[i][j]
                 else:
-                    pop_new[i][j] = population[i][j]
+                    population[i][j] = population[i][j]
 
-                    # performing simulated annealing
+
         if (allow_SA):
-            simulated_annealing(population=pop_new,
-                                fitness=fitness_list,
+            # performing simulated annealing
+            simulated_annealing(population=population,
+                                fitness=fitness,
                                 compute_fitness=compute_fitness,
-                                data=data)
+                                data=data,
+                                seed=seed)
 
+    if type_data == "uci":
+        best_accuracy = compute_accuracy(train_X=data["train_x"],
+                                     train_Y=data["train_y"],
+                                     test_X=data["test_x"],
+                                     test_Y=data["test_y"],
+                                     particle=best_particle)
 
+        best_solution["features"] = best_particle
+        best_solution["accuracy"] = best_accuracy
+        best_solution["fitness"] = best_fitness
 
-        population = pop_new.copy()
+        print(f"Best Fitness: {best_fitness}, Best Accuracy: {best_accuracy}, Number of features: {np.sum(best_particle)}")
 
-    return best_particle, conv_plot
+    else:
+        best_solution["features"] = best_particle
+        best_solution["fitness"] = best_fitness
+
+        print(f"Best weight: {best_fitness}, Number of items: {np.sum(best_particle)}")
+
+    pickle.dump(best_solution, open(f"{config.BASE_PATH}/storage/best_solution_{data['name']}.pickle", "wb"))
+    return best_particle, best_fitness, conv_plot
 
 def main():
     # test uci data
-    # test fitness for uci
     type_data = "uci"
-    dataset = "BreastCancer"
+    dataset = "Ionosphere"
     omega = 0.9
 
     # reading dataset
@@ -127,6 +164,7 @@ def main():
     train_X, test_X, train_Y, test_Y = train_test_split(data, label, test_size=0.2, random_state=0)
     np.random.seed(0)
     data_dict = {
+        "name": dataset,
         "train_x": train_X,
         "train_y": train_Y,
         "test_x": test_X,
@@ -136,7 +174,20 @@ def main():
 
     DEOSA(data_dict,
           type_data=type_data,
-          dimension=data.shape[1])
+          dimension=data.shape[1],
+          allow_SA=True)
+
+    # test the knapsack fitness
+    type_data = "knapsack"
+    dataset = "ks_24c"
+    data_dict = data_loader(type_data=type_data,
+                            data_name=dataset)
+    data_dict["name"] = dataset
+
+    DEOSA(data_dict,
+          type_data=type_data,
+          dimension=data_dict["count"],
+          allow_SA=True)
 
 
 if __name__ == "__main__":

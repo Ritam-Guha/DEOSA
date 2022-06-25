@@ -14,15 +14,6 @@ def get_transfer_function(shape):
         return Vfunction
 
 
-# def get_fitness_function(type_data):
-#     assert(type_data in ["knapsack", "uci"])
-#
-#     if type_data == "uci":
-#         return fitness_fs
-#     else:
-#         return fitness_knapsack
-
-
 def Ufunction(ip):
     # U-shaped transfer function
     alpha = 2
@@ -57,11 +48,6 @@ def sign_func(x):
 def onecount(particle):
     # counts the number of features in a particle
     return int(np.sum(particle))
-
-
-def reshape_np(particle):
-    # function to reshape a numpy array
-    return np.reshape(particle, (1, particle.shape[0]))
 
 
 def compute_accuracy(train_X,
