@@ -8,6 +8,14 @@ def simulated_annealing(population,
                         compute_fitness,
                         data,
                         seed=0):
+    """
+    :param population: current population of solutions
+    :param fitness: corresponding fitnesses
+    :param compute_fitness: function to compute fitness
+    :param data: data in a particular format
+    :param seed: seed used for random number generation
+    :return:
+    """
 
     # simulated annealing
     np.random.seed(seed)
