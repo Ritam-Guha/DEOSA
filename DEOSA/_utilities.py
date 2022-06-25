@@ -1,6 +1,27 @@
+# from DEOSA.fitness_functions import fitness_knapsack, fitness_fs
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier as KNN
 import openpyxl as xl
+
+
+def get_transfer_function(shape):
+    assert(shape in ["u", "s", "v"])
+    if shape == "u":
+        return Ufunction
+    elif shape == "s":
+        return sigmoid
+    else:
+        return Vfunction
+
+
+# def get_fitness_function(type_data):
+#     assert(type_data in ["knapsack", "uci"])
+#
+#     if type_data == "uci":
+#         return fitness_fs
+#     else:
+#         return fitness_knapsack
+
 
 def Ufunction(ip):
     # U-shaped transfer function
@@ -28,7 +49,7 @@ def sigmoid(ip):
 
 def sign_func(x): 
     # Signum function
-    if x<0:
+    if x < 0:
         return -1
     return 1
 
@@ -43,23 +64,27 @@ def reshape_np(particle):
     return np.reshape(particle, (1, particle.shape[0]))
 
 
-def compute_accuracy(train_X, train_Y, test_X, test_Y, particle):  
+def compute_accuracy(train_X,
+                     train_Y,
+                     test_X,
+                     test_Y,
+                     particle):
     # function to compute classification accuracy  
     cols = np.flatnonzero(particle)     
-    if(cols.shape[0] == 0):
+    if cols.shape[0] == 0:
         return 0    
 
     clf = KNN(n_neighbors=5)
-    train_data = train_X[:,cols]
-    test_data = test_X[:,cols]
-    clf.fit(train_data,train_Y)
-    val = clf.score(test_data,test_Y)
+    train_data = train_X[:, cols]
+    test_data = test_X[:, cols]
+    clf.fit(train_data, train_Y)
+    val = clf.score(test_data, test_Y)
     return val
 
 
 def avg_concentration(eq_pool, pool_size, dimension):    
-    # computes average concentration of the equlibrium pool
-    avg = np.sum(eq_pool[0:pool_size,:], axis=0)         
+    # computes average concentration of the equilibrium pool
+    avg = np.sum(eq_pool[0:pool_size, :], axis=0)
     avg = avg/pool_size
     return avg
 
