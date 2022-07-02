@@ -2,7 +2,7 @@ import copy
 
 import DEOSA.config as config
 from DEOSA.data.dataloader import data_loader
-from DEOSA._utilities import avg_concentration, sign_func, get_transfer_function, compute_accuracy
+from DEOSA.utilities._utilities import avg_concentration, sign_func, get_transfer_function, compute_accuracy
 from DEOSA.simulated_annealing import simulated_annealing
 from DEOSA.fitness_functions import get_fitness_function
 
@@ -11,7 +11,6 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 def DEOSA(  data,
-            dimension,
             type_data,
             population_size=50,
             transfer_shape="u",
@@ -24,7 +23,6 @@ def DEOSA(  data,
             seed=0):
     """
     :param data: data should be passed in a particular format
-    :param dimension: feature size of the data
     :param type_data: knapsack/uci
     :param population_size: number of population members
     :param transfer_shape: s/v/u
@@ -40,6 +38,10 @@ def DEOSA(  data,
 
     # initialization
     np.random.seed(seed)
+    if type_data == "uci":
+        dimension = data["train_x"].shape[1]
+    else:
+        dimension = data["count"]
     population = np.random.randint(0, 2, size=(population_size, dimension))
     eq_pool = np.zeros((pool_size + 1, dimension))
     eq_fit = np.array([0.0]*pool_size)
@@ -140,8 +142,9 @@ def DEOSA(  data,
 
         print(f"Best weight: {best_fitness}, Number of items: {np.sum(best_particle)}")
 
-    pickle.dump(best_solution, open(f"{config.BASE_PATH}/storage/best_solution_{data['name']}.pickle", "wb"))
-    return best_particle, best_fitness, conv_plot
+    best_solution["conv_plot"] = conv_plot
+    # pickle.dump(best_solution, open(f"{config.BASE_PATH}/storage/best_solution_{data['name']}.pickle", "wb"))
+    return best_solution
 
 def main():
     # test uci data
@@ -174,7 +177,6 @@ def main():
 
     DEOSA(data_dict,
           type_data=type_data,
-          dimension=data.shape[1],
           allow_SA=True)
 
     # test the knapsack fitness
@@ -186,7 +188,6 @@ def main():
 
     DEOSA(data_dict,
           type_data=type_data,
-          dimension=data_dict["count"],
           allow_SA=True)
 
 

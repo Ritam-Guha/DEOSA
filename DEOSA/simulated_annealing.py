@@ -1,6 +1,6 @@
 import numpy as np
 
-from DEOSA._utilities import find_neighbor
+from DEOSA.utilities._utilities import find_neighbor
 
 
 def simulated_annealing(population,

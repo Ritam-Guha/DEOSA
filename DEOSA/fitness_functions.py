@@ -1,4 +1,4 @@
-from DEOSA._utilities import compute_accuracy
+from DEOSA.utilities._utilities import compute_accuracy
 from DEOSA.data.dataloader import data_loader
 
 import copy
