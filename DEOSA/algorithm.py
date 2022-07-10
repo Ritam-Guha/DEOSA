@@ -39,7 +39,7 @@ def DEOSA(  data,
     # initialization
     np.random.seed(seed)
     if type_data == "uci":
-        dimension = data["train_x"].shape[1]
+        dimension = data["data"].shape[1]
     else:
         dimension = data["count"]
     population = np.random.randint(0, 2, size=(population_size, dimension))
@@ -52,7 +52,7 @@ def DEOSA(  data,
 
     # iterations start
     for iter in range(max_iter):
-        fitness = compute_fitness(population, data)
+        fitness = compute_fitness(population, data, seed=seed)
         sorted_idx = np.argsort(-fitness).squeeze()
         population = population[sorted_idx, :]
         fitness = fitness[0, sorted_idx]
@@ -80,11 +80,13 @@ def DEOSA(  data,
             inx = np.random.randint(0, pool_size)
             Ceq = np.array(eq_pool[inx])
 
+            # Generate random vectors r and lambda (turnover rate)
             lambda_vec = np.zeros(np.shape(Ceq))
             r_vec = np.zeros(np.shape(Ceq))
             for j in range(dimension):
                 lambda_vec[j], r_vec[j] = np.random.random(2)
 
+            # Exponential term F according to Eqn. (10)
             F_vec = np.zeros(np.shape(Ceq))
             for j in range(dimension):
                 x = -1 * lambda_vec[j] * t
@@ -93,11 +95,13 @@ def DEOSA(  data,
 
             r1, r2 = np.random.random(2)
 
+            # Compute GCP vector according to Eqn. (13)
             if r2 < GP:
                 GCP = 0
             else:
                 GCP = 0.5 * r1
 
+            # Use GCP to calculate G_0 and Generation Rate G according to Eqn. (11) and (12)
             G0 = np.zeros(np.shape(Ceq))
             G = np.zeros(np.shape(Ceq))
 
@@ -105,7 +109,7 @@ def DEOSA(  data,
                 G0[j] = GCP * (Ceq[j] - lambda_vec[j] * population[i][j])
                 G[j] = G0[j] * F_vec[j]
 
-            # use transfer function to map continuous->binary
+            # Use transfer function to map continuous->binary
             for j in range(dimension):
                 temp = Ceq[j] + (population[i][j] - Ceq[j]) * F_vec[j] + G[j] * (1 - F_vec[j]) / lambda_vec[j]
                 temp = transfer_func(temp)
@@ -124,11 +128,10 @@ def DEOSA(  data,
                                 seed=seed)
 
     if type_data == "uci":
-        best_accuracy = compute_accuracy(train_X=data["train_x"],
-                                     train_Y=data["train_y"],
-                                     test_X=data["test_x"],
-                                     test_Y=data["test_y"],
-                                     particle=best_particle)
+        best_accuracy = compute_accuracy(data=data["data"],
+                                        label=data["label"],
+                                        particle=best_particle,
+                                         seed=seed)
 
         best_solution["features"] = best_particle
         best_solution["accuracy"] = best_accuracy
@@ -164,14 +167,11 @@ def main():
     print("dimension:", dimension)
 
     # loading_dataset
-    train_X, test_X, train_Y, test_Y = train_test_split(data, label, test_size=0.2, random_state=0)
     np.random.seed(0)
     data_dict = {
         "name": dataset,
-        "train_x": train_X,
-        "train_y": train_Y,
-        "test_x": test_X,
-        "test_y": test_Y,
+        "data": data,
+        "label": label,
         "omega": omega
     }
 

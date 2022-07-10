@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier as KNN
 import openpyxl as xl
-
+from sklearn.model_selection import KFold
 
 def get_transfer_function(shape):
     assert(shape in ["u", "s", "v"])
@@ -50,21 +50,31 @@ def onecount(particle):
     return int(np.sum(particle))
 
 
-def compute_accuracy(train_X,
-                     train_Y,
-                     test_X,
-                     test_Y,
-                     particle):
+def compute_accuracy(data,
+                     label,
+                     particle,
+                     seed=0):
     # function to compute classification accuracy  
     cols = np.flatnonzero(particle)     
     if cols.shape[0] == 0:
-        return 0    
+        return 0
 
-    clf = KNN(n_neighbors=5)
-    train_data = train_X[:, cols]
-    test_data = test_X[:, cols]
-    clf.fit(train_data, train_Y)
-    val = clf.score(test_data, test_Y)
+    kf = KFold(n_splits=5, random_state=seed, shuffle=True)
+    kf.get_n_splits(data)
+
+    val = 0
+
+    for train_index, test_index in kf.split(data):
+        train_X, test_X = data[train_index], data[test_index]
+        train_Y, test_Y = label[train_index], label[test_index]
+
+        clf = KNN(n_neighbors=5)
+        train_data = train_X[:, cols]
+        test_data = test_X[:, cols]
+        clf.fit(train_data, train_Y)
+        val += clf.score(test_data, test_Y)
+
+    val /= 5
     return val
 
 

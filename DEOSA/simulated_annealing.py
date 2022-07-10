@@ -14,7 +14,7 @@ def simulated_annealing(population,
     :param compute_fitness: function to compute fitness
     :param data: data in a particular format
     :param seed: seed used for random number generation
-    :return:
+    :return: updates the population and corresponding fitness
     """
 
     # simulated annealing
@@ -25,13 +25,13 @@ def simulated_annealing(population,
     for particle_no in range(particle_count):
         T = 2 * dimension
         current_particle = population[particle_no][np.newaxis, :].copy()
-        current_fitness = compute_fitness(current_particle, data)
+        current_fitness = compute_fitness(current_particle, data, seed=seed)
         best_particle = current_particle.copy()
         best_fitness = current_fitness.copy()
 
         while T > T0:
             new_particle = find_neighbor(current_particle)
-            new_fitness = np.float64(compute_fitness(new_particle, data))
+            new_fitness = np.float64(compute_fitness(new_particle, data, seed=seed))
 
             if new_fitness > best_fitness:
                 current_particle = new_particle.copy()

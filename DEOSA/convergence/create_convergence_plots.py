@@ -48,9 +48,9 @@ def plot_convergence():
     num_runs = 2
     max_iter = 30
 
-    # run_experiments(datasets=datasets,
-    #                 num_runs=num_runs,
-    #                 max_iter=max_iter)
+    run_experiments(datasets=datasets,
+                    num_runs=num_runs,
+                    max_iter=max_iter)
 
     for type_data in datasets.keys():
         for dataset_name in datasets[type_data]:

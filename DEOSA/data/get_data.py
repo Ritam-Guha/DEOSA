@@ -20,14 +20,11 @@ def create_data_dict(type_data,
         dimension = np.shape(data)[1]  # particle dimension
 
         # loading_dataset
-        train_X, test_X, train_Y, test_Y = train_test_split(data, label, test_size=0.2, random_state=0)
         np.random.seed(0)
         data_dict = {
             "name": dataset_name,
-            "train_x": train_X,
-            "train_y": train_Y,
-            "test_x": test_X,
-            "test_y": test_Y,
+            "data": data,
+            "label": label,
             "omega": omega
         }
 

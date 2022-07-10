@@ -6,7 +6,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 def fitness_fs(particles,
-              data):
+              data,
+              seed):
     """
     :param particles: population under consideration
     :param data: data to deal with
@@ -30,7 +31,7 @@ def fitness_fs(particles,
 
         else:
             set_cnt = set_cnt / dimension
-            acc = compute_accuracy(data["train_x"], data["train_y"], data["test_x"], data["test_y"], particle)
+            acc = compute_accuracy(data["data"], data["label"], particle, seed)
             val = data["omega"] * acc + (1 - data["omega"]) * (1 - set_cnt)
 
         values[0, i] = np.float64(val)
@@ -39,7 +40,8 @@ def fitness_fs(particles,
 
 
 def fitness_knapsack(particles,
-                    data):
+                    data,
+                    seed=0):
 
     """
     :param particles: population under consideration
